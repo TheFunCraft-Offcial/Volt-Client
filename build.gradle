@@ -1,0 +1,60 @@
+plugins {
+    // NON-remapping Loom. From 26.1 onward Minecraft ships unobfuscated, so the
+    // old 'fabric-loom' / 'fabric-loom-remap' plugins are gone along with Yarn.
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'java'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    maven { name = 'Fabric';   url = 'https://maven.fabricmc.net/' }
+    maven { name = 'TerraformersMC'; url = 'https://maven.terraformersmc.com/' }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+
+    // No mappings block. 26.x is unobfuscated and Loom defaults to official names.
+
+    // NOTE: 'implementation' / 'compileOnly', NOT 'modImplementation'.
+    // Nothing is remapped anymore.
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Mod Menu is optional. Comment this out (and the entrypoint in
+    // fabric.mod.json) if you do not want the dependency.
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
+    }
+}
+
+java {
+    // MC 26.2 requires Java 25.
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = 'UTF-8'
+    it.options.release = 25
+}
+
+// 'jar', not 'remapJar' -- there is nothing left to remap.
+jar {
+    from('LICENSE') {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
